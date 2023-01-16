@@ -29,8 +29,8 @@ def main():
             # print('data got', full_data)
             time.sleep(0.5)
             conn.sendall(full_data)
-            after_data = conn.recv(BUFFER_SIZE)
-            print('data after', after_data)
+            # after_data = conn.recv(BUFFER_SIZE)
+            # print('data after', after_data)
             conn.close()
 
 if __name__ == "__main__":
