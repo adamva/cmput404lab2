@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 import socket, sys
 
-#create a tcp socket
+PRX_HST = 'localhost'
+PRX_PRT = 8002
+BUFFER_SIZE = 4096
+
+# Create a tcp socket
 def create_tcp_socket():
     print('Creating socket')
     try:
@@ -9,10 +13,10 @@ def create_tcp_socket():
     except (socket.error, msg):
         print(f'Failed to create socket. Error code: {str(msg[0])} , Error message : {msg[1]}')
         sys.exit()
-    print('Socket created successfully')
+    # print('Socket created successfully')
     return s
 
-#get host information
+# Get IP for hostname
 def get_remote_ip(host):
     print(f'Getting IP for {host}')
     try:
@@ -21,44 +25,38 @@ def get_remote_ip(host):
         print ('Hostname could not be resolved. Exiting')
         sys.exit()
 
-    print (f'Ip address of {host} is {remote_ip}')
+    # print (f'Ip address of {host} is {remote_ip}')
     return remote_ip
 
-#send data to server
+# Send data to server
 def send_data(serversocket, payload):
     print("Sending payload")    
     try:
-        serversocket.sendall(payload.encode())
+        serversocket.sendall(payload)
+        serversocket.shutdown(socket.SHUT_WR)
     except socket.error:
         print ('Send failed')
         sys.exit()
-    print("Payload sent successfully")
+    # print("Payload sent successfully")
 
 def main():
-    try:
-        #define address info, payload, and buffer size
-        proxy_host = 'localhost'
-        req_host = 'www.google.com'
-        port = 8002 # port = 80
-        payload = f'GET / HTTP/1.0\r\nHost: {req_host}\r\n\r\n'
-        buffer_size = 4096
+    try:        
+        req_data = b'GET / HTTP/1.0\nHost: www.google.com\n\n'
 
-        #make the socket, get the ip, and connect
+        # Create client socket and connect to proxy
         s = create_tcp_socket()
+        prx_ip = get_remote_ip(PRX_HST)
+        s.connect((prx_ip , PRX_PRT))
+        print (f'Connected to {PRX_HST} on {prx_ip}:{PRX_PRT}')
 
-        remote_ip = get_remote_ip(proxy_host)
-
-        s.connect((remote_ip , port))
-        print (f'Socket Connected to {proxy_host} on ip:port {remote_ip}:{port}')
-        
-        #send the data and shutdown
-        send_data(s, payload)
+        # Send the data and shutdown
+        send_data(s, req_data)
         s.shutdown(socket.SHUT_WR)
 
-        #continue accepting data until no more left
+        # Read response
         full_data = b""
         while True:
-            data = s.recv(buffer_size)
+            data = s.recv(BUFFER_SIZE)
             if not data:
                  break
             full_data += data
@@ -66,8 +64,8 @@ def main():
     except Exception as e:
         print(e)
     finally:
-        #always close at the end!
         s.close()
+
 if __name__ == "__main__":
     main()
 
